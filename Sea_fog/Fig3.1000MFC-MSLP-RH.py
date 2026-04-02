@@ -22,44 +22,25 @@ from scipy.ndimage import gaussian_filter
 from scipy.ndimage import maximum_filter, minimum_filter
 import os
 
-
-# font ---------
+# Font ---------
 plt.rcParams['font.family']='serif'
 plt.rcParams['axes.unicode_minus']=False
 
 
 # ===========================================
-# Informatiton ==============================
 year = "2020"
 month= "08"
 day  = np.arange(17,20+1)
 
 # Time index -------
-#day_date= ["08.18 15LST", "08.18 19LST","08.19 03LST"]
-#date_idxp = [21+24+9,  21+6+24+7, 27+6+24+9]
-#date_idxs = [21+24+24+9,  21+6+24+24+7, 27+6+24+24+9]
-
-#day_date = ["0600LST 18 AUG", "1200LST 18 AUG","1800LST 18 AUG"]
-#date_idxp = [21+24,  21+6+24, 27+6+24]
-#date_idxs = [21+24+24,  21+6+24+24, 27+6+24+24]
-
-#day_date= ["0000LST 18 AUG", "19_00LST","19_06LST"]
-#date_idxp = [21+24-6,  21+6+24+12, 27+6+24+12]
-#date_idxs = [21+24+24-6,  21+6+24+24+12, 27+6+24+24+12]
-
 day_date  = ["0000LST 18 AUG", "1200LST 18 AUG","0000LST 19 AUG"]
 day_ofn  = ["00_18", "12_18", "00_19"]
 date_idxp = [21+24-6,  21+6+24, 27+6+24+6]
 date_idxs = [21+24+24-6,  21+6+24+24, 27+6+24+6+24]
 
-#day_date= ["08.17 06LST", "08.17 12LST","08.17 18LST"]
-#date_idxp = [21,  21+6, 27+6]
-#date_idxs = [21+24,  21+6+24, 27+6+24]
 
-# ------------------
 # Domain -----------
 ilon=120;elon=137;ilat=30;elat=45
-#ilon=124;elon=138;ilat=33;elat=45
 
 pressure_level = [1000, 975, 950, 925, 900, 850, 800, 750, 650, 550, 450, 300, 200]
 level   = 1000
@@ -72,12 +53,12 @@ os.makedirs(opath, exist_ok=True)
 
 
 # ============================================
-# Read file(hourly) ==========================
-idr ="/scratch/x3158a03/DATA/Reanalysis/2008/"
+# Read file         ==========================
+idr ="./"
 ifnp=idr+"ERA5_hour-pres_2020-08-1619.nc"
 ifns=idr+"ERA5_hour_sfc_2020-08-1519.nc"
 
-idrl="/scratch/x3158a03/DATA/Reanalysis/"
+idrl="./"
 ifnl=idrl+"era5_hour_landmask.nc"
 
 ds = xr.open_dataset("./mfc_output.nc")
@@ -86,27 +67,19 @@ dss= xr.open_dataset(ifns)
 dsl= xr.open_dataset(ifnl)
 
 
-# M-flux ---
 mfc_adv = ds["mfc_adv"]
 mfc     = ds["mfc"]
 uq	= ds["uq"]
 vq      = ds["vq"]
 
-# MSLP ---
-psfc=dss["msl"]  #mslp: mean sea level pressure; unit: Pa
+psfc=dss["msl"]  
 psfc=psfc.reindex(latitude=list(reversed(psfc.latitude)))
 
-# RH (upper) ---
-r850=dsp["r"].sel(pressure_level=level)
-r850=r850.reindex(latitude=list(reversed(r850.latitude)))
-
-# RH (2m) ---
 tsfc=dss["t2m"]
 dsfc=dss["d2m"]
 tsfc=tsfc.reindex(latitude=list(reversed(tsfc.latitude)))
 dsfc=dsfc.reindex(latitude=list(reversed(dsfc.latitude)))
 
-# Landmask ---
 land=dsl["lsm"].isel(valid_time=0)
 land=land.reindex(latitude=list(reversed(land.latitude)))
 
@@ -115,8 +88,8 @@ land=land.reindex(latitude=list(reversed(land.latitude)))
 # Function ==================================
 def calculate_RH(t2m, d2m) :
 
-    es = 6.112 * np.exp(17.67 * t2m / (t2m+243.5)) #hPa
-    e  = 6.112 * np.exp(17.67 * d2m / (d2m+243.5)) #hPa
+    es = 6.112 * np.exp(17.67 * t2m / (t2m+243.5)) 
+    e  = 6.112 * np.exp(17.67 * d2m / (d2m+243.5)) 
     rh = (e/es) * 100
 
     return rh
@@ -152,27 +125,12 @@ for ii, i in enumerate(date_idxp):
     uq_data  = uq.isel(time=ii)
     vq_data  = vq.isel(time=ii)
 
-    print("mfc_data = ", mfc_data)  # latitude: 61, longitude: 69 
-    print("uq_data = ", uq_data)  # latitude: 61, longitude: 69
-    print("vq_data = ", vq_data)  # latitude: 61, longitude: 69
-        
-    #ocean_mask = land.values <= 0.5
-    #mfc_mask   = np.where(ocean_mask, mfc, np.nan) 
-    #uq_mask    = np.where(ocean_mask, uq, np.nan)
-    #vq_mask    = np.where(ocean_mask, vq, np.nan)
-    
-    #mfc_day.append(mfc_mask)
-    #uq_day.append(uq_mask)
-    #vq_day.append(vq_mask)
-
-    print("======= => ii = ", ii)
     mfc_day.append(mfc_data)
     uq_day.append(uq_data)
     vq_day.append(vq_data)
   
 
     # (2) MSLP ============================================
-    print("======= => i = ", i)
     p_data = psfc.isel(valid_time=date_idxs[ii]) / 1e2  # Pa->hPa 
     p_day.append(p_data)
 
@@ -204,11 +162,11 @@ alpbet = [f"({chr(97+i)})" for i in range(12)]
 fig = plt.figure(figsize=(15, 13))
 proj = ccrs.PlateCarree()
 
-height_ratios = [7, 0.1, 1.8, 7, 0.1]  #행1 cbar 간격  행2 cbar
+height_ratios = [7, 0.1, 1.8, 7, 0.1]  
 gs = gridspec.GridSpec(5, 3, figure=fig, 
                       height_ratios=height_ratios,
-                      hspace=0.04,  # Space between grid cells
-                      wspace=0.02,  # Space between columns
+                      hspace=0.04,  
+                      wspace=0.02,  
                       left=0.02, right=0.98, 
                       top=0.98, bottom=0.2)
 
@@ -216,9 +174,9 @@ gs = gridspec.GridSpec(5, 3, figure=fig,
 for i in range(len(date_idxp)*2):
 
     if i < 3:
-        ax = fig.add_subplot(gs[0, i], projection=proj)  # Row 0
+        ax = fig.add_subplot(gs[0, i], projection=proj) 
     else:
-        ax = fig.add_subplot(gs[3, i-3], projection=proj)  # Row 3
+        ax = fig.add_subplot(gs[3, i-3], projection=proj)  
 
 
     # 격자선 추가
@@ -234,20 +192,17 @@ for i in range(len(date_idxp)*2):
 
     ax.set_extent([ilon, elon, ilat, elat], crs=ccrs.PlateCarree())
     ax.add_feature(cfeature.COASTLINE, linewidth=1)
-#    ax.add_feature(cfeature.BORDERS, linewidth=0.5)
     ax.add_feature(cfeature.LAND, color='lightgrey', alpha=0.5)
     ax.add_feature(cfeature.OCEAN, color='white')
 
 
     if i < 3 :
        # 1-1. MSLP ---------
-       p_smooth   = gaussian_filter(p_day[i].values, sigma=1.5) ## sigma 값으로 smoothing 강도 조절
-       msl_levels = np.linspace(msl_vmin, msl_vmax, msl_l)  # unit: hPa
+       p_smooth   = gaussian_filter(p_day[i].values, sigma=1.5) 
+       msl_levels = np.linspace(msl_vmin, msl_vmax, msl_l) 
        msl_moisture = ax.contour(lons_msl, lats_msl, p_smooth, levels=msl_levels, colors="k", linewidths=1.8)
        ax.clabel(msl_moisture, levels=msl_moisture.levels, inline=True, fmt='%d', inline_spacing=2)
 
-       # 1-2. H/L 표시------
-       # [직접 지정 방식]
        hl_positions = [
             [{"label": "H", "lon": 125.5, "lat": 32.2, "color": "blue"}],
             [{"label": "H", "lon": 126.3, "lat": 33., "color": "blue"}],
@@ -258,40 +213,11 @@ for i in range(len(date_idxp)*2):
             ax.text(item["lon"], item["lat"], item["label"], color=item["color"]
                    ,fontsize=16, fontweight='bold', ha='center', va='center', transform=ccrs.PlateCarree() )
  
-#       # [자동화 방식 ]
-#       p_data_i = p_day[i].values if hasattr(p_day[i], 'values') else p_day[i]
-#
-#       # 지도 영역 내 마스킹
-#       lon_mask = (lons_msl >= ilon) & (lons_msl <= elon)
-#       lat_mask = (lats_msl >= ilat) & (lats_msl <= elat)
-#       p_masked = p_data_i[np.ix_(lat_mask, lon_mask)]
-#       lons_masked = lons_msl[lon_mask]
-#       lats_masked = lats_msl[lat_mask]
-#       
-#       neighborhood = 20 
-#       local_max = (maximum_filter(p_masked, size=neighborhood) == p_masked)
-#       local_min = (minimum_filter(p_masked, size=neighborhood) == p_masked)
-#       
-#       # 경계 제거
-#       local_max[:2, :] = local_max[-2:, :] = local_max[:, :2] = local_max[:, -2:] = False
-#       local_min[:2, :] = local_min[-2:, :] = local_min[:, :2] = local_min[:, -2:] = False
-#       
-#       # 1) H 표시
-#       for lat_i, lon_i in zip(*np.where(local_max)):
-#           ax.text(lons_masked[lon_i], lats_masked[lat_i], 'H',
-#                   color='blue', fontsize=15, fontweight='bold',
-#                   ha='center', va='center', transform=ccrs.PlateCarree())
-#       
-#       # 2) L 표시
-#       for lat_i, lon_i in zip(*np.where(local_min)):
-#           ax.text(lons_masked[lon_i], lats_masked[lat_i], 'L',
-#                   color='red', fontsize=15, fontweight='bold',
-#                   ha='center', va='center', transform=ccrs.PlateCarree())
 
        # 1-3. RH 2m --------
-       rh_levels = np.linspace(rh_vmin, rh_vmax, rh_l)  # unit: kg/kg/s
+       rh_levels = np.linspace(rh_vmin, rh_vmax, rh_l)  
        r2m_moisture = ax.contourf(lons_rh, lats_rh, r2m_day[i], cmap='Blues', levels=rh_levels,
-                           alpha=0.8, transform=ccrs.PlateCarree()) #extend='max'
+                           alpha=0.8, transform=ccrs.PlateCarree()) 
        
 
        ax.text(0.02, 0.97, f"{alpbet[i]} {day_date[i]}", transform=ax.transAxes,
@@ -301,7 +227,7 @@ for i in range(len(date_idxp)*2):
     else:
        idx = i-3
        # 2. Moisture Flux Convergence ---
-       cf_mfc = ax.contourf(lons_mfc, lats_mfc, mfc_day[idx], cmap='BrBG', levels=mfc_levels, #PuOr
+       cf_mfc = ax.contourf(lons_mfc, lats_mfc, mfc_day[idx], cmap='BrBG', levels=mfc_levels,
                            extend='both',alpha=0.8, transform=ccrs.PlateCarree() )
 
        # 2. Moisture flux vector -------------------
@@ -310,7 +236,7 @@ for i in range(len(date_idxp)*2):
        cv = ax.quiver(lons_mfc[::skip], lats_mfc[::skip],
                       uq_day[idx][::skip, ::skip],
                       vq_day[idx][::skip, ::skip],
-                      scale=ref_vector ,  # 벡터 크기 조절 (필요시 조정)
+                      scale=ref_vector ,  
                       scale_units='xy',
                       color='black',
                       alpha=1,
@@ -318,15 +244,13 @@ for i in range(len(date_idxp)*2):
                       transform=ccrs.PlateCarree()
                       )
        if idx == 0:
-           # 바람 벡터 범례
-           #qk = ax.quiverkey(cv, 0.1, -0.12, ref_vector, rf'{ref_vector} (g kg$^{{-1}}$ m s$^{{-1}}$)',
            qk = ax.quiverkey(cv, 0.1, -0.12, ref_vector, rf'10$^{2}$ (g kg$^{{-1}}$ m s$^{{-1}}$)',
                       labelpos='S', coordinates='axes', fontproperties={'size': 10})
            qk.text.set_bbox(dict(facecolor='white', edgecolor='white', 
                           boxstyle='round',pad=0.5, alpha=0.9))
  
        
-       ax.text(0.02, 0.97, alpbet[i], transform=ax.transAxes,
+       ax.text(0.5, 0.97, alpbet[i], transform=ax.transAxes,
                fontsize=12, fontweight='bold', va='top', ha='left', color='black'
               ,backgroundcolor="white", alpha=0.7)
 
@@ -340,23 +264,17 @@ for i in range(len(date_idxp)*2):
         spine.set_edgecolor('black')
 
 
-# Colorbar for Row 1 -----------
-cbar_ax1 = fig.add_axes([0.15, 0.61, 0.7, 0.012])  # [left, bottom, width, height]
+cbar_ax1 = fig.add_axes([0.15, 0.61, 0.7, 0.012])  
 cbar1 = plt.colorbar(r2m_moisture, cax=cbar_ax1, orientation='horizontal')
-cbar1.set_label(f'2m Relative Humidity [%]', fontsize=15) # , fontweight='bold')
-#cbar3.set_label(f'1000 hPa Relative Humidity [%]', fontsize=15) # , fontweight='bold')
+cbar1.set_label(f'2 m Relative Humidity [%]', fontsize=15) 
 cbar1.ax.tick_params(labelsize=15)
 
-cbar_ax2 = fig.add_axes([0.15, 0.15, 0.7, 0.012])  # [left, bottom, width, height]
+cbar_ax2 = fig.add_axes([0.15, 0.15, 0.7, 0.012]) 
 cbar2 = plt.colorbar(cf_mfc, cax=cbar_ax2, orientation='horizontal')
 cbar2.set_label('Moisture Convergence [g kg$^{-1}$ s$^{-1}$ (10$^{-5}$)]', 
-                fontsize=15) #, fontweight='bold')
+                fontsize=15) 
 cbar2.ax.tick_params(labelsize=15)
 
-
-plt.tight_layout(rect=[0, 0.1, 1, 0.88])
-plt.savefig(opath+f'{EXP_name}_map_{year}{month}_{day_ofn[0]}-{day_ofn[1]}-{day_ofn[2]}.png',
-            dpi=600, bbox_inches='tight', facecolor='white')
 
 plt.show()
 plt.close("all")

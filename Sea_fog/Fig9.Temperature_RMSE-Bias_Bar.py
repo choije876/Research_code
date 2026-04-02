@@ -11,35 +11,25 @@ import seaborn as sns
 from sklearn.metrics import mean_squared_error
 import os
 
-# font ---------
+# Font ---------
 plt.rcParams['font.family']='serif'
 plt.rcParams['axes.unicode_minus']=False
 
 
-
 # Setting ================= 
-OBS_name= 'Buoy 값' # 'Buoy 값' , 'GK2A 값'
+OBS_name= 'Buoy 값'
 
-
-# save ----
-opath = f"./Fig/Statistic_var/"
-os.makedirs(opath, exist_ok=True)
-ofn = opath+f"Temperature_RMSE-Bias"  #_sw, _met
 
 
 # =========================================================
-# Load & Read Excel ---------------------------------------
-idr = "/scratch/x3158a03/Analysis/PAPER/Final/Fig/Statistic_var/"
+idr = "./"
 ifn = idr + f'Temperature_Buoy-GK2A-MODEL_Comparison-donghae.xlsx'
-print("file_path=",ifn)
 
 sheet_names = ['동해_SST','동해_T2M']
 all_data = []
 
 df_sst = pd.read_excel(ifn, sheet_name=sheet_names[0])
 df_t2m = pd.read_excel(ifn, sheet_name=sheet_names[1])
-print(df_sst)
-print(f"시트 데이터 로드 완료: {len(df_sst)}행")
 
 
 df_sst = df_sst[pd.notna(df_sst['GK2A SST'])].copy()
@@ -123,18 +113,12 @@ t2m_bias_results[experiments[1]] = t2m_bias_sk
 t2m_bias_results[experiments[2]] = t2m_bias_cp
 
 
-# 4. T-test
-
-
-
 
 
 # =====================================================
 # Plotting      =======================================
 # =====================================================
-"""
-RMSE, bias 결과 시각화
-"""
+
 fts = 10
 alpbet = [f"({chr(97+i)})" for i in range(9)]
 
@@ -170,12 +154,10 @@ ax1.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
 ax1.text(0.01, 0.97, f'{alpbet[0]}', transform=ax1.transAxes,
           fontsize=fts, fontweight='bold', va='top', ha='left', color='black')
 
-# 바 위에 수치 표시
 for bar, value in zip(bars1, sst_rmse_values):
     ax1.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.01,
             f'{value:.2f}', ha='center', va='bottom')
 
-# Bias 값 표시
 for bar, value in zip(bars2, sst_bias_values):
     y_pos = bar.get_height() + 0.05 if value >= 0 else bar.get_height() - 0.15
     ax1.text(bar.get_x() + bar.get_width()/2., y_pos,
@@ -197,12 +179,10 @@ ax2.axhline(y=0, color='gray', linestyle='--', alpha=0.5)
 ax2.text(0.01, 0.97, f'{alpbet[1]}', transform=ax2.transAxes,
            fontsize=fts, fontweight='bold', va='top', ha='left', color='black')
 
-# RMSE 값 표시
 for bar, value in zip(bars3, t2m_rmse_values):
     ax2.text(bar.get_x() + bar.get_width()/2., bar.get_height() + 0.05,
             f'{value:.2f}', ha='center', va='bottom', fontsize=9)
 
-# Bias 값 표시
 for bar, value in zip(bars4, t2m_bias_values):
     y_pos = bar.get_height() + 0.05 if value >= 0 else bar.get_height() - 0.15
     ax2.text(bar.get_x() + bar.get_width()/2., y_pos,
@@ -212,12 +192,8 @@ for bar, value in zip(bars4, t2m_bias_values):
 
 ax1.legend(loc='upper right', framealpha=0.9, facecolor='white', frameon=False)
 
-#lines1, labels1 = ax1.get_legend_handles_labels()
-#lines2, labels2 = ax2.get_legend_handles_labels()
-#ax1.legend(lines1 + lines2, labels1 + labels2, loc='upper left',facecolor='white', framealpha=0)
 
 plt.tight_layout()
-plt.savefig(ofn, bbox_inches='tight', dpi=600, pad_inches=0.2)
 plt.show()
 
 

@@ -17,51 +17,45 @@ import cartopy.crs as ccrs
 from pyproj import Proj
 import os
 
-# font ---------
+# Font ---------
 plt.rcParams['font.family']='serif'
 plt.rcParams['axes.unicode_minus']=False
 
-# Define Infomation ========================
+# ================================================
 domain = "01"
 tt   = 1718
-nvar = "TSK" # "T2" # "TSK"
+nvar = "TSK" 
 
 
-# DOMAIN-AREA
-elat = 42  #43  #42
-slat = 34  #33  #34
-elon = 136 #133 #136.0
-slon = 128 #123 #128
+# DOMAIN-AREA ----
+elat = 42  
+slat = 34  
+elon = 136
+slon = 128
 
-# ulleungdo 영역
 ull_coast_slat = 37.0
 ull_coast_elat = 38.5
 ull_coast_slon = 130.5
 ull_coast_elon = 131.5
 
-# 중부 연안 영역
 mid_coast_slat = 36.8
-mid_coast_elat = 38.0 # 39
+mid_coast_elat = 38.0 
 mid_coast_slon = 128.8
-mid_coast_elon = 130.0 #131
+mid_coast_elon = 130.0 
 
-# 남부 연안 영역
 south_coast_slat = 35.5
 south_coast_elat = 36.0
 south_coast_slon = 129.2
 south_coast_elon = 129.7
 
 
-
-
-# DATE -----
+# DATE ----
 year  = "2020"
 month = "08"
 days  = ["17","18", "19", "20"]
 
 dates_kst = [
     datetime(2020, 8, 18),
- #   datetime(2020, 8, 19)
 ]
 
 time_lists_kst = []
@@ -82,16 +76,9 @@ for date_kst in dates_kst:
 
 
 
-# save ----
-opath = f"./Fig/SST/"
-os.makedirs(opath, exist_ok=True)
-
 
 # Function  ==========================================
 def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
-    """
-    시간별 GK2A 위성 데이터를 읽고 평균 계산
-    """
     temp_s_list = []
     valid_mask_list = []
 
@@ -99,14 +86,12 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
     lon_sat = None
 
     for i, time in enumerate(time_list_utc):
-        # 파일명 생성 (YYYYMMDDHHMM 형식)
         time_str = time.strftime("%Y%m%d%H00")
         gk2a_file = idr_s + f"gk2a_ami_le2_sst_ko020lc_{time_str}.nc"
 
         try:
             ds_s = xr.open_dataset(gk2a_file)
 
-            # 첫 번째 파일에서만 좌표 계산
             if i == 0:
                 x_sat_range = np.linspace(-899000, 899000, ds_s.dims['dim_x'])
                 y_sat_range = np.linspace(899000, -899000, ds_s.dims['dim_y'])
@@ -118,7 +103,7 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
 
             valid_mask = (temp_s != 65535) & (~np.isnan(temp_s))
             temp_s[~valid_mask] = np.nan
-            temp_s[valid_mask] = temp_s[valid_mask] - 273.15  # K to Celsius
+            temp_s[valid_mask] = temp_s[valid_mask] - 273.15 
 
             temp_s_list.append(temp_s)
             valid_mask_list.append(valid_mask)
@@ -126,11 +111,9 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
             ds_s.close()
 
             kst_time = time + timedelta(hours=9)
-          #  print("kst_time(satellite) = ",kst_time)  =  2020-08-18 00:00:00
 
         except Exception as e:
             print(f"File not found or error for {time_str}: {e}")
-            # 파일이 없으면 NaN 배열 추가
             if i == 0:
                 print("Cannot proceed without first file for coordinates")
                 return None, None, None
@@ -141,15 +124,12 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
 
 
 def draw_box(ax, slat, elat, slon, elon, color='red', linestyle='-', linewidth=1.7, label=None):
-    # 박스의 모서리 좌표 생성
-    lons = [slon, elon, elon, slon, slon]  # 시작점으로 다시 돌아와 닫힌 사각형 만들기
+    lons = [slon, elon, elon, slon, slon]
     lats = [slat, slat, elat, elat, slat]
 
-    # 박스 그리기
     ax.plot(lons, lats, transform=ccrs.PlateCarree(),
             color=color, linewidth=linewidth, linestyle=linestyle)
 
-    # 라벨이 있으면 추가
     if label:
         ax.text(slon + (elon-slon)*0.5, elat + 0.1, label,
                 transform=ccrs.PlateCarree(), color=color,
@@ -158,7 +138,7 @@ def draw_box(ax, slat, elat, slon, elon, color='red', linestyle='-', linewidth=1
 
 #=============================================================================
 # 1. ** GK2A dataload *** ----------------------------------------------------
-idr_s = f"/scratch/x3158a03/DATA/Satellite/GK2A/work/2008_sst/"
+idr_s = f"./"
 
 proj = Proj(proj='lcc',
         lat_1=30.0,
@@ -178,21 +158,13 @@ for day_idx in range(len(dates_kst)):
     time_list_kst = time_lists_kst[day_idx]
     time_list_utc = time_lists_utc[day_idx]
 
-    print(f"\n{'='*60}")
-    print(f"Processing {date_kst.strftime('%Y-%m-%d')}")
-    print(f"{'='*60}")
 
-
-    # 1. Read GK2A  ---
     temp_s_list, valid_mask_list, sat_coords = read_gk2a_hourly(time_list_utc, idr_s, proj)
     lat_sat, lon_sat = sat_coords
 
-    # 위성 데이터 평균 계산
     temp_s_array = np.array(temp_s_list)
     sst_mean_s = np.nanmean(temp_s_array, axis=0)
-    print("sst_mean_s= ",sst_mean_s)
 
-    # 저장
     daily_data.append({
         'date': date_kst,
         'gk2a_mean': sst_mean_s,
@@ -210,14 +182,12 @@ EXP_name2="SKIN"
 EXP_name3="CPLD"
 MODEL = f"{EXP_name1}-{EXP_name2}-{EXP_name3}"
 
-# WRF
-idr_w = f"/scratch/x3158a03/wrf_output/EAST-C/2008/AUTO/"
-ifn_we = idr_w+f"sstx-ERA5-MetnoSST-2way_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  #sst_fix
-ifn_we2= idr_w+f"skin-ERA5-MetnoSST-2way_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  # sst_skin
+idr_w = f"./"
+ifn_we = idr_w+f"sstx-wrfout_Fog_{domain}_2020-08-17_18:00:00.nc" 
+ifn_we2= idr_w+f"skin-wrfout_Fog_{domain}_2020-08-17_18:00:00.nc" 
 
-# COAWST
-idr_c = f"/scratch/x3158a03/coawst_output/2008/"
-ifn_ce= idr_c+f"WDM6-ERA5-SW-2way-YSU_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  # solar_source
+idr_c = f"./"
+ifn_ce= idr_c+f"cpld_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  
 
 data0= nc.Dataset(ifn_we)
 data1= nc.Dataset(ifn_we2)
@@ -226,8 +196,6 @@ landmask=data1.variables['LANDMASK'][0,:,:]
 
 lat2d = data1.variables['XLAT'][0,:,:]
 lon2d = data1.variables['XLONG'][0,:,:]
-#ntime = len(data1.variables['XLAT'][:,0,0])
-#print("ntime: ", ntime)
 
 
 
@@ -237,13 +205,12 @@ sst_sk_list =[]
 sst_cp_list =[]
 
 
-ntime = 25-3 # 8/18 daily mean : 18.3KST ~ 19.3KST
+ntime = 25-3 
 
 for k in range(ntime):
-#k=24
-    sst1 = wrf.getvar(data0,f"{nvar}",timeidx=k)-273.15  #timeidx=wrf.ALL_TIMES)[k,:,:] -273.15
-    sst2 = wrf.getvar(data1,f"{nvar}",timeidx=k)-273.15  #timeidx=wrf.ALL_TIMES)[k,:,:] -273.15
-    sst3 = wrf.getvar(data2,f"{nvar}",timeidx=k)-273.15  #timeidx=wrf.ALL_TIMES)[k,:,:] -273.15
+    sst1 = wrf.getvar(data0,f"{nvar}",timeidx=k)-273.15  
+    sst2 = wrf.getvar(data1,f"{nvar}",timeidx=k)-273.15  
+    sst3 = wrf.getvar(data2,f"{nvar}",timeidx=k)-273.15  
 
     sst1.coords["XLAT"] = (("south_north", "west_east"), lat2d)
     sst1.coords["XLONG"] = (("south_north", "west_east"), lon2d)
@@ -301,8 +268,6 @@ for ax in axes :
     ax.add_feature(cfeature.LAND, facecolor='lightgray', alpha=0.3)
     plt.setp(ax.spines.values(), lw=1.2, color='black')
     gl = ax.gridlines(draw_labels=True, linestyle="--", color="gray", alpha=0.5)
-#    gl.xlocator = mticker.MultipleLocator(2)
-#    gl.ylocator = mticker.MultipleLocator(2)
     gl.top_labels  = False
     gl.left_labels = False
     gl.right_labels = False
@@ -317,21 +282,15 @@ axes[0].text(0.02, 0.98, f'{(alpbet[0])}', transform=axes[0].transAxes,
               fontsize=fns+1, verticalalignment='top', fontweight='bold')
 
 
-# 울릉도 영역 박스 추가***
 colors = ['#1B4965', '#3182BD', '#E6550D', '#8C564B'] 
 
 draw_box(axes[0], ull_coast_slat, ull_coast_elat, ull_coast_slon, ull_coast_elon,
-         color=colors[1]) #label='Ulleungdo')
-
-# 중부 연안 영역 박스 추가
+         color=colors[1]) 
 draw_box(axes[0], mid_coast_slat, mid_coast_elat, mid_coast_slon, mid_coast_elon,
-         color=colors[2]) #label='Mid Coast')
-
-# 남부 연안 영역 박스 추가
+         color=colors[2])
 draw_box(axes[0], south_coast_slat, south_coast_elat, south_coast_slon, south_coast_elon,
-         color=colors[3]) # label='South Coast')
+         color=colors[3]) 
 
-# Add Buoy sites  ***
 for lat_pt, lon_pt in zip(xlat, xlon):
         axes[0].plot(
             lon_pt, lat_pt,
@@ -343,31 +302,25 @@ for lat_pt, lon_pt in zip(xlat, xlon):
 
 # 1. SST_CNTL ---
 cf1 = axes[1].contourf(wrf.to_np(lon2d), wrf.to_np(lat2d), wrf.to_np(sst_ct_mean), levels=levels,
-                 cmap=comap, #'Spectral_r',  #'coolwarm'
-                 extend='both')  #'both'
+                 cmap=comap, extend='both') 
 axes[1].set_title(f'{EXP_name1}', fontsize=fns, fontweight='bold')
 axes[1].text(0.01, 0.97, f'{(alpbet[1])}', transform=axes[1].transAxes,
          fontsize=fns, fontweight='bold', va='top', ha='left', color='black')
 
-
 # 2. SST_SKIN ---
 cf2 = axes[2].contourf(wrf.to_np(lon2d), wrf.to_np(lat2d), wrf.to_np(sst_sk_mean), levels=levels,
-                 cmap=comap,  #'coolwarm'
-                 extend='both')  #'both'
+                 cmap=comap, extend='both') 
 axes[2].set_title(f'{EXP_name2}', fontsize=fns, fontweight='bold')
 axes[2].text(0.01, 0.97, f'{(alpbet[2])}', transform=axes[2].transAxes,
          fontsize=fns, fontweight='bold', va='top', ha='left', color='black')
 
-
 # 3. SST_CPLD ---
 cf3 = axes[3].contourf(wrf.to_np(lon2d), wrf.to_np(lat2d), wrf.to_np(sst_cp_mean), levels=levels,
-                 cmap=comap,  #'bwr',  #'coolwarm'
-                 extend='both')  #'both'
+                 cmap=comap, extend='both')  
 axes[3].set_title(f'{EXP_name3}', fontsize=fns, fontweight='bold')
 axes[3].text(0.01, 0.97, f'{(alpbet[3])}', transform=axes[3].transAxes,
          fontsize=fns, fontweight='bold', va='top', ha='left', color='black')
 gl.right_labels = True
-
 
 
 lef , bot,  right, top = 0, 0.5, 1, 0.
@@ -382,11 +335,7 @@ elif nvar == "T2":
 cbar1.ax.tick_params(labelsize=fns-1)
 
 
-
 plt.tight_layout(rect=[lef, bot, right, top])
-
-ofn = opath+f"SST_{MODEL}-Mean_d{domain}.png"
-plt.savefig(ofn, bbox_inches='tight', pad_inches=0.2, dpi=300)
 plt.show()
 plt.close()
 

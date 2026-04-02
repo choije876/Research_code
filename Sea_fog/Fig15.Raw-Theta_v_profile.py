@@ -14,14 +14,12 @@ import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import os
 
-
-# font ---------
+# Font ---------
 plt.rcParams['font.family']='serif'
 plt.rcParams['axes.unicode_minus']=False
 
 
 #=======================================
-# Define file paths and variables
 domain = "02"
 year   = "2020"
 month  = "08"
@@ -35,7 +33,6 @@ kappa   = 0.2854  # Rd/cp
 z_space = 10
 
 pos_l = ["Donghae", "Ulleungdo[ASOS]", "Ulleungdo", "Ulleungdo_NE","Ulleungdo_NW","Dokdo", "Russia","East-South","Ulsan","Uljin","Imrang"]
-pos_k = ["동해","울릉도(ASOS)", "울릉도","울릉도_북동","울릉도_북서","독도","러시아","동해남쪽","울산","울진","임랑"]
 pos_cl= ["DON", "ULL_ASOS","ULL", "UNE","UNW", "DOK", "RUS","ES","ULS","ULJ","IMR"]
 xlat  = [37.490 ,  37.481,  37.455,  38.007,  37.743,  37.24 , 40  , 32,  35.2, 36.912, 35.303]
 xlon  = [129.942, 130.899, 131.114, 131.553, 130.601, 131.87 , 131 ,129, 129.5, 129.87, 129.293]
@@ -48,12 +45,6 @@ position_list  = [2, 9, 10]
 position_names = ["ULL","ULJ","IMR"]
 
 
-# save ------
-opath = f"./Fig/Temp_Vert/"
-ofn   = opath+"Vertical-Theta-v_SSmax-level_profile_3x4_6h"
-os.makedirs(opath, exist_ok=True)
-
-
 
 #=============================================================================
 #-----------------------------------------------------------------------------
@@ -62,14 +53,12 @@ EXP_name1="CNTL"
 EXP_name2="SKIN"
 EXP_name3="CPLD"
 
-# 1. WRF ----
-idr_w = "/scratch/x3158a03/wrf_output/EAST-C/2008/AUTO/"
-ifn_w = idr_w+f"sstx-ERA5-MetnoSST-2way_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  #sst_fix
-ifn_w2= idr_w+f"skin-ERA5-MetnoSST-2way_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  # sst_skin
+idr_w = "./"
+ifn_w = idr_w+f"sstx-wrfout_Fog_{domain}_2020-08-17_18:00:00.nc" 
+ifn_w2= idr_w+f"skin-wrfout_Fog_{domain}_2020-08-17_18:00:00.nc" 
 
-# 2. COAWST ----
-idr_c = f"/scratch/x3158a03/coawst_output/2008/"
-ifn_c = idr_c+f"WDM6-ERA5-SW-2way-YSU_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  # solar_source HYCOM
+idr_c = f"./"
+ifn_c = idr_c+f"cpld_wrfout_Fog_{domain}_2020-08-17_18:00:00.nc"  
 
 ds_ct = nc.Dataset(ifn_w)
 ds_sk = nc.Dataset(ifn_w2)
@@ -107,19 +96,19 @@ for position in position_list :
 
     for idx, k in enumerate(time_idx_list) :
 
-        z_ct   = wrf.getvar(ds_ct, 'z', timeidx=k)[:nlevel+1, latt, lonn]     # m (height)
-        tv_ct  = wrf.getvar(ds_ct, 'tv', timeidx=k)[:nlevel+1,latt, lonn]    # K
-        p_ct   = wrf.getvar(ds_ct, 'pressure', timeidx=k)[:nlevel+1, latt, lonn]  # hPa
+        z_ct   = wrf.getvar(ds_ct, 'z', timeidx=k)[:nlevel+1, latt, lonn]    
+        tv_ct  = wrf.getvar(ds_ct, 'tv', timeidx=k)[:nlevel+1,latt, lonn]    
+        p_ct   = wrf.getvar(ds_ct, 'pressure', timeidx=k)[:nlevel+1, latt, lonn]
         lsm_ct = wrf.getvar(ds_ct, 'LANDMASK', timeidx=0)[latt, lonn]
         
-        z_sk   = wrf.getvar(ds_sk, 'z', timeidx=k)[:nlevel+1, latt, lonn]     # m (height)
-        tv_sk  = wrf.getvar(ds_sk, 'tv', timeidx=k)[:nlevel+1, latt, lonn]    # K
-        p_sk   = wrf.getvar(ds_sk, 'pressure', timeidx=k)[:nlevel+1, latt, lonn]  # hPa
+        z_sk   = wrf.getvar(ds_sk, 'z', timeidx=k)[:nlevel+1, latt, lonn]   
+        tv_sk  = wrf.getvar(ds_sk, 'tv', timeidx=k)[:nlevel+1, latt, lonn]   
+        p_sk   = wrf.getvar(ds_sk, 'pressure', timeidx=k)[:nlevel+1, latt, lonn] 
         lsm_sk = wrf.getvar(ds_sk, 'LANDMASK', timeidx=0)[latt, lonn]
         
-        z_cp   = wrf.getvar(ds_cp, 'z', timeidx=k)[:nlevel+1, latt, lonn]     # m (height)
-        tv_cp  = wrf.getvar(ds_cp, 'tv', timeidx=k)[:nlevel+1, latt, lonn]    # K
-        p_cp   = wrf.getvar(ds_cp, 'pressure', timeidx=k)[:nlevel+1, latt, lonn]  # hPa
+        z_cp   = wrf.getvar(ds_cp, 'z', timeidx=k)[:nlevel+1, latt, lonn]     
+        tv_cp  = wrf.getvar(ds_cp, 'tv', timeidx=k)[:nlevel+1, latt, lonn]    
+        p_cp   = wrf.getvar(ds_cp, 'pressure', timeidx=k)[:nlevel+1, latt, lonn] 
         lsm_cp = wrf.getvar(ds_cp, 'LANDMASK', timeidx=0)[latt, lonn]
         
         
@@ -169,9 +158,9 @@ for position in position_list :
         the_v_sk = tv_sk * (p0 / p_sk) ** kappa
         the_v_cp = tv_cp * (p0 / p_cp) ** kappa
 
-        stab_data['CNTL'][pos_name][idx] = the_v_ct #stab_ct
-        stab_data['SKIN'][pos_name][idx] = the_v_sk #stab_sk
-        stab_data['CPLD'][pos_name][idx] = the_v_cp #stab_cp
+        stab_data['CNTL'][pos_name][idx] = the_v_ct 
+        stab_data['SKIN'][pos_name][idx] = the_v_sk 
+        stab_data['CPLD'][pos_name][idx] = the_v_cp 
      
 
         #=============================================================================
@@ -223,7 +212,7 @@ for position in position_list :
  
 
 # ================================================
-#  Plotting ======================================
+#  Plotting 
 # ================================================
 liw = 2.2
 fts = 10
@@ -278,7 +267,6 @@ for row, pos_name in enumerate(position_names):
 
     
 plt.tight_layout()
-plt.savefig(f"{ofn}.png", dpi=400, bbox_inches='tight')
 plt.show()
 
 plt.close()

@@ -18,8 +18,7 @@ from cartopy.mpl.gridliner import LONGITUDE_FORMATTER, LATITUDE_FORMATTER
 from pyproj import Proj
 import os
 
-
-# font ---------
+# Font ---------
 plt.rcParams['font.family']='serif'
 plt.rcParams['axes.unicode_minus']=False
 
@@ -27,17 +26,11 @@ plt.rcParams['axes.unicode_minus']=False
 
 # Information Setting =================================
 nvar_b1 = "수온(°C)"
-depth_level = "skin" # "skin", "50cm", "1m"
+depth_level = "skin"
 
-preofn = f"SST-Buoy-vs-GK2A_dailymean-diff_comparison"
-opath = f"./Fig/OBS-SST_dailymean/"
-os.makedirs(opath, exist_ok=True)
-ofn = f"{opath}/{preofn}"
+preofn = f"SST-Buoy-vs-GK2A_dailymean-diff"
 
-
-# Buoy Time filter (day.17-19) ----
 dates_kst = [
- #  datetime(2020, 8, 17),
     datetime(2020, 8, 18),
     datetime(2020, 8, 19)
 ]
@@ -65,18 +58,15 @@ for date_kst in dates_kst:
 # DOMAIN-AREA ----
 domain = "02"
 
-lat_max =45.0 ; elat = 39  #43  #44
-lat_min =33.0 ; slat = 32.5  #32.5
-lon_max =138.0; elon = 133 # 136.0
-lon_min =125.0; slon = 122 # 128
+lat_max =45.0 ; elat = 39  
+lat_min =33.0 ; slat = 32.5 
+lon_max =138.0; elon = 133 
+lon_min =125.0; slon = 122 
 
 
 
-# Function  ==========================================
+# Function ==========================================
 def read_buoy_coordinates(excel_file):
-    """
-    엑셀 파일에서 위경도 정보를 읽어서 딕셔너리로 반환
-    """
     try:
         locations_df = pd.read_excel(excel_file, sheet_name="위경도")
         coordinates = {}
@@ -86,10 +76,9 @@ def read_buoy_coordinates(excel_file):
                     'lat': row['위도'],
                     'lon': row['경도']
                 }
-        print(f"위경도 정보 로드 완료: {len(coordinates)}개 지점")
         return coordinates
     except Exception as e:
-        print(f"위경도 정보 읽기 오류: {e}")
+        print(f"Error : {e}")
         return {}
 
 
@@ -128,9 +117,7 @@ def read_buoy_data(excel_file, region, time_list_kst, nvar_b1, coordinates):
 
 
 def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
-    """
-    시간별 GK2A 위성 데이터를 읽고 평균 계산
-    """
+
     temp_s_list = []
     valid_mask_list = []
 
@@ -138,14 +125,12 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
     lon_sat = None
 
     for i, time in enumerate(time_list_utc):
-        # 파일명 생성 (YYYYMMDDHHMM 형식)
         time_str = time.strftime("%Y%m%d%H00")
         gk2a_file = idr_s + f"gk2a_ami_le2_sst_ko020lc_{time_str}.nc"
 
         try:
             ds_s = xr.open_dataset(gk2a_file)
 
-            # 첫 번째 파일에서만 좌표 계산
             if i == 0:
                 x_sat_range = np.linspace(-899000, 899000, ds_s.dims['dim_x'])
                 y_sat_range = np.linspace(899000, -899000, ds_s.dims['dim_y'])
@@ -157,7 +142,7 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
 
             valid_mask = (temp_s != 65535) & (~np.isnan(temp_s))
             temp_s[~valid_mask] = np.nan
-            temp_s[valid_mask] = temp_s[valid_mask] - 273.15  # K to Celsius
+            temp_s[valid_mask] = temp_s[valid_mask] - 273.15  
 
             temp_s_list.append(temp_s)
             valid_mask_list.append(valid_mask)
@@ -165,11 +150,9 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
             ds_s.close()
 
             kst_time = time + timedelta(hours=9)
-          #  print("kst_time(satellite) = ",kst_time)  =  2020-08-18 00:00:00
 
         except Exception as e:
             print(f"File not found or error for {time_str}: {e}")
-            # 파일이 없으면 NaN 배열 추가
             if i == 0:
                 print("Cannot proceed without first file for coordinates")
                 return None, None, None
@@ -180,10 +163,6 @@ def read_gk2a_hourly(time_list_utc, idr_s, proj_params):
 
 
 def find_nearest_grid_point(lat_grid, lon_grid, target_lat, target_lon):
-    """
-    위성 그리드에서 주어진 위경도와 가장 가까운 그리드 포인트의 인덱스 찾기
-    """
-    # 유클리드 거리 계산
     dist = np.sqrt((lat_grid - target_lat)**2 + (lon_grid - target_lon)**2)
     y_idx, x_idx = np.unravel_index(np.argmin(dist), dist.shape)
     return y_idx, x_idx
@@ -194,15 +173,10 @@ def find_nearest_grid_point(lat_grid, lon_grid, target_lat, target_lon):
 # =========================================================
 # Read & Load file                                        =
 # =========================================================
-date_labels = ["2020-08-18"] #, "2020-08-19"]
+date_labels = ["2020-08-18"] 
 
-
-# 1) Buoy data
-idr_b= "/scratch/x3158a03/DATA/In-situ/"
-ifn_b1 = idr_b + "KMA_Buoy_2020081720_nurion.xlsx"
-
-# 2) GK2A data
-idr_s = f"/scratch/x3158a03/DATA/Satellite/GK2A/work/2008_sst/"
+ifn_b1 = "KMA_Buoy_2020081720_nurion.xlsx"
+idr_s = f"./"
 
 proj = Proj(proj='lcc',
         lat_1=30.0,
@@ -235,21 +209,12 @@ for day_idx in range(len(dates_kst)):
     time_list_kst = time_lists_kst[day_idx]
     time_list_utc = time_lists_utc[day_idx]
 
-    print(f"\n{'='*60}")
-    print(f"Processing {date_kst.strftime('%Y-%m-%d')}")
-    print(f"{'='*60}")
-
-
-    # 1. Read GK2A  ---
     temp_s_list, valid_mask_list, sat_coords = read_gk2a_hourly(time_list_utc, idr_s, proj)
     lat_sat, lon_sat = sat_coords
 
-    # 위성 데이터 평균 계산
     temp_s_array = np.array(temp_s_list)
     sst_mean_s = np.nanmean(temp_s_array, axis=0)
 
-
-    # 2. Read Buoy data ---
     buoy_data_list=[]
     for region in pos_k:
         buoy_data = read_buoy_data(ifn_b1, region, time_list_kst, nvar_b1, coordinates1)
@@ -257,7 +222,6 @@ for day_idx in range(len(dates_kst)):
             buoy_data_list.append(buoy_data)
 
 
-    # 3. Read gk2a at buoy points and calculate differences
     filtered_buoy_data = {
         'regions': [],
         'lats': [],
@@ -272,10 +236,8 @@ for day_idx in range(len(dates_kst)):
         lat = buoy['lat']
         lon = buoy['lon']
 
-        # 위경도를 위성 그리드 인덱스로 변환
         grid_y, grid_x = find_nearest_grid_point(lat_sat, lon_sat, lat, lon)
 
-        # 각 시간대별 위성 데이터 확인
         valid_times = []
         buoy_sst_values = []
         sat_sst_values = []
@@ -284,20 +246,16 @@ for day_idx in range(len(dates_kst)):
             sat_value = temp_s_list[t][grid_y, grid_x]
             buoy_value = buoy['hourly_data'][t]
     
-            # 위성과 부이 둘 다 유효한 데이터가 있는 시간만 선택
             if not np.isnan(sat_value) and not np.isnan(buoy_value):
                 valid_times.append(t)
                 buoy_sst_values.append(buoy_value)
                 sat_sst_values.append(sat_value)
     
-        # 유효 데이터가 있는 경우만 처리
         if len(valid_times) > 0:
-            # 평균 계산
             buoy_mean = np.nanmean(buoy_sst_values)
             sat_mean = np.nanmean(sat_sst_values)
             diff = sat_mean - buoy_mean
     
-            # 데이터 저장
             filtered_buoy_data['regions'].append(region)
             filtered_buoy_data['lats'].append(lat)
             filtered_buoy_data['lons'].append(lon)
@@ -305,9 +263,7 @@ for day_idx in range(len(dates_kst)):
             filtered_buoy_data['satellite_sst_mean'].append(sat_mean)
             filtered_buoy_data['difference'].append(diff)
     
-            print(f"{region}: {len(valid_times)}/24 valid hours, buoy={buoy_mean:.2f}°C, sat={sat_mean:.2f}°C, diff={diff:.2f}°C")
     
-    # 저장
     all_daily_data.append({
         'date': date_kst,
         'gk2a_mean': sst_mean_s,
@@ -318,9 +274,9 @@ for day_idx in range(len(dates_kst)):
 
 
 
-# =========================================================
-# Plotting  ===============================================
-# =========================================================
+# ================================================
+# Plotting 
+# ================================================
 fns=11
 alpbet = [f"({chr(97+i)})" for i in range(4)]
 
@@ -341,7 +297,6 @@ for ax_row in axes:
         ax.gridlines(draw_labels=False, linewidth=0.5, alpha=0.5, linestyle='--')
 
 
-# Setting colormap ----------
 vmin1, vmax1 = 23, 30
 levels1 = np.arange(vmin1, vmax1+0.1, 0.5)
 
@@ -352,7 +307,6 @@ levels2 = np.arange(vmin2, vmax2+0.1, 0.5)
 import matplotlib as mpl
 n_colors1 = len(levels1) - 1
 n_colors2 = len(levels2) - 1
-#colors1 = plt.cm.Spectral_r(np.linspace(0, 1, n_colors1))
 colors1 = plt.cm.rainbow(np.linspace(0, 1, n_colors1))
 colors2 = plt.cm.RdBu_r(np.linspace(0, 1, n_colors2))
 cmap1 = mpl.colors.ListedColormap(colors1)
@@ -365,9 +319,7 @@ for day_idx in range(len(all_daily_data)):
     daily_data = all_daily_data[day_idx]
     date_str = daily_data['date'].strftime('%Y-%m-%d')
 
-    # 왼쪽 컬럼: GK2A + Buoy
     ax_left = axes[day_idx, 0]
-
 
     # 1) GK2A plot(contour) --------
     cf = ax_left.contourf(daily_data['lon_sat'], daily_data['lat_sat'], daily_data['gk2a_mean']
@@ -376,7 +328,6 @@ for day_idx in range(len(all_daily_data)):
     ax_left.text(0.02, 0.98, f'{(alpbet[2*day_idx])}', transform=ax_left.transAxes,
              fontsize=fns+1, verticalalignment='top', fontweight='bold')
 
-    ## add buoy value
     buoy_data = daily_data['buoy_data']
     ax_left.scatter(buoy_data['lons'], buoy_data['lats'], c=buoy_data['buoy_sst_mean'],
                      cmap=cmap1, norm=norm1, s=80, edgecolors='black', linewidth=1.3, zorder=5, transform=ccrs.PlateCarree())
@@ -384,9 +335,9 @@ for day_idx in range(len(all_daily_data)):
     # 2) GK2A-Buoy -------
     ax_right=axes[day_idx, 1]
 
-    if len(buoy_data['regions']) > 0:  # filtered_buoy_data -> buoy_data
-        sc = ax_right.scatter(buoy_data['lons'], buoy_data['lats'],  # filtered_buoy_data -> buoy_data
-                      c=buoy_data['difference'], cmap=cmap2, norm=norm2,  # filtered_buoy_data -> buoy_data
+    if len(buoy_data['regions']) > 0:  
+        sc = ax_right.scatter(buoy_data['lons'], buoy_data['lats'],  
+                      c=buoy_data['difference'], cmap=cmap2, norm=norm2,
                       s=80, edgecolors='black', linewidth=1.3, zorder=5, transform=ccrs.PlateCarree())
 
     ax_right.text(0.02, 0.98, f'{(alpbet[2*day_idx+1])}', transform=ax_right.transAxes,
@@ -396,16 +347,13 @@ for day_idx in range(len(all_daily_data)):
 left1, bottom1, width1, height1 = 0.13, 0.23, 0.35, 0.01
 left2, bottom2, width2, height2 = 0.53, 0.23, 0.35, 0.01
 
-# colorbar1 ---
 cbar_ax1 = fig.add_axes([left1, bottom1, width1, height1])
 cbar1 = fig.colorbar(cf, cax=cbar_ax1, orientation='horizontal', extend='both', spacing='uniform')
 cbar1.set_label(f'SST [°C]', fontsize=fns)
 cbar1.ax.tick_params(labelsize=fns-1)
-tick_positions1 = np.arange(int(vmin1), int(vmax1)+1, 1.0)  # 23부터 30까지 1 간격
+tick_positions1 = np.arange(int(vmin1), int(vmax1)+1, 1.0) 
 cbar1.set_ticks(tick_positions1)
 
-
-# colorbar2 ---
 cbar_ax2 = fig.add_axes([left2, bottom2, width2, height2])
 sm = plt.cm.ScalarMappable(cmap=cmap2, norm=norm2)
 sm.set_array([])
@@ -414,16 +362,6 @@ cbar2.set_label(f'SST Difference(GK2A-Buoy) [°C]', fontsize=fns)
 cbar2.ax.tick_params(labelsize=fns-1)
 tick_positions = np.arange(int(vmin2), int(vmax2)+1, 1.)
 cbar2.set_ticks(tick_positions)
-
-
-
-
-
-plt.tight_layout(rect=[0, 0.1, 1, 1])
-plt.savefig(ofn + '.png', dpi=600, bbox_inches='tight')
-print(f"\n{'='*60}")
-print(f"Figure saved: {ofn}.png")
-print(f"{'='*60}")
 
 
 plt.show()
